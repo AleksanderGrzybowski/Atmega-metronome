@@ -62,7 +62,6 @@ bool buzzing = false;
 uint8_t buzzing_counter = 0;
 
 uint8_t current_digit = 0;
-bool pause = false;
 
 
 #define SOUND_DURATION 10
@@ -70,17 +69,14 @@ bool pause = false;
 
 ISR(TIMER0_OVF_vect) {
 
-    if (!pause) {
-        if (++current_digit == 4) current_digit = 0;
-        PORTD = ~(1 << current_digit);
+    if (++current_digit == 4) current_digit = 0;
 
-        PORTB = ~(display[current_digit]);
-        PORTC = ~(display[current_digit] >> 2);
-        pause = true;
-    } else {
-        PORTD = PORTC = PORTB = 0xff;
-        pause = false;
-    }
+    PORTD |= 0b00001111;
+    PORTB = ~(display[current_digit]);
+    PORTC = ~(display[current_digit] >> 2);
+
+    PORTD &= ~(1 << current_digit);
+
 
     if (buzzing) {
         OCR0A = SOUND_PWM_VALUE;
