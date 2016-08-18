@@ -4,6 +4,22 @@
 #include <avr/sleep.h>
 #include <stdbool.h>
 
+#define DOT 128
+#define G 64
+#define F 32
+#define E 16
+#define D 8
+#define C 4
+#define B 2
+#define A 1
+
+char digits[12] = { (A + B + C + D + E + F), (B + C), (A + B + G + E + D), (A + B
+		+ G + C + D), (F + G + B + C), (A + F + G + C + D), (A + F + G + E + D
+		+ C), (F + A + B + C), (A + B + C + D + E + F + G), (A + B + C + D + F
+		+ G), (0), (G) };
+
+uint8_t display[4];
+
 
 // Interrupts using 16-bit Timer1
 void setup_interrupt() {
@@ -31,7 +47,23 @@ void setup() {
 
 int buzzing = 0;
 int cnt = 0;
+int cur_digit = 0;
+int pause = 0;
 ISR(TIMER0_OVF_vect) {
+
+    if (!pause) {
+        cur_digit++;
+        if (cur_digit == 4) cur_digit = 0;
+        PORTD = ~(1 << cur_digit);
+
+        PORTB = ~(display[cur_digit]);
+        PORTC = ~(display[cur_digit] >> 2);
+        pause = 1;
+    } else {
+        PORTD = PORTC = PORTB = 0xff;
+        pause = 0;
+    }
+
     if (buzzing) {
         OCR0A = 128;
         cnt++;
@@ -49,8 +81,6 @@ uint16_t bpm[] = { 11719,11161,10654,10190,9766,9375,9015,8681,8371,8082,7813,75
 int current_bpm = 60;
 ISR(TIMER1_OVF_vect) { // here
 
-    PORTC ^= 0xff;
-    PORTC ^= (1 << PC0);
     TCNT1 = 65536 - bpm[current_bpm-20];
     buzzing = 1;
 }
@@ -60,6 +90,14 @@ int main(void) {
     setup();
 
     DDRC = 0xff;
+
+    DDRD  = 0xff;
+    DDRB = DDRC = 0xff;
+
+    display[0] = digits[1];
+    display[1] = digits[2];
+    display[2] = digits[3];
+    display[3] = digits[4];
 
     char buf[10];
     TCNT1 = 65530;
