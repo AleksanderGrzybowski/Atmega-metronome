@@ -31,7 +31,6 @@ void setup_interrupt() {
     TIMSK1 |= (1 << TOIE1);
     
     // timer 0
-    DDRD |= (1 << PD6);
     TCCR0A |= (1 << COM0A1) | (1 << COM0A0);
     TCCR0A |= (1 << WGM00);
     TCCR0B |= (1 << CS00);
@@ -108,25 +107,31 @@ void display_number(uint16_t number) {
     display[1] = digits[disp[2]];
     display[2] = digits[disp[1]];
     display[3] = digits[disp[0]];
-
-
 }
 
 
 int main(void) {
     setup();
 
-    DDRC = 0xff;
+    DDRC = 0b00111111;
+    DDRD = 0b01001111;
+    DDRB = 0b00000011;
 
-    DDRD  = 0xff;
-    DDRB = DDRC = 0xff;
+    PORTD |= (1 << PD7);
+    PORTB |= (1 << PB2);
 
-
-    char buf[10];
     TCNT1 = 65530;
 
-    display_number(current_bpm);
 
     while(1) {
+        if (!(PIND & (1 << PD7))) {
+            current_bpm++;
+        }
+        if (!(PINB & (1 << PB2))) {
+            current_bpm--;
+        }
+        display_number(current_bpm);
+        _delay_ms(100);
+
     }
 }
