@@ -7,38 +7,40 @@
 
 // Interrupts using 16-bit Timer1
 void setup_interrupt() {
-    // no prescaler
+    // timer 1
     TCCR1B &= ~(1 << CS11);
     TCCR1B |= (1 << CS10) | (1 << CS12);
-    TIMSK1 |= (1 << TOIE1); // TODO do 0 too
+    TIMSK1 |= (1 << TOIE1);
+    
+    // timer 0
+    DDRD |= (1 << PD6);
+    TCCR0A |= (1 << COM0A1) | (1 << COM0A0);
+    TCCR0A |= (1 << WGM00);
+    TCCR0B |= (1 << CS00);
+    TIMSK0 |= (1 << TOIE0);
+    OCR0A = 250;
+
     sei(); // enable global interrupts
 }
 
 
-void disable_jtag() {
-    //MCUCSR |= (1 << JTD);
-    //MCUCSR |= (1 << JTD);
-}
-
 void setup() {
     setup_interrupt();
-    disable_jtag();
 }
-
 
 
 int buzzing = 0;
 int cnt = 0;
 ISR(TIMER0_OVF_vect) {
-    /*if (buzzing) {
+    if (buzzing) {
         OCR0A = 128;
         cnt++;
         if (cnt > 10) {
-            OCR0A = 0;
+            OCR0A = 255;
             buzzing = false;
             cnt = 0;
         }
-    }*/
+    }
 
 }
 
@@ -59,7 +61,6 @@ int main(void) {
 
     DDRC = 0xff;
 
-    OCR1A = 128;
     char buf[10];
     TCNT1 = 65530;
 
