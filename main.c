@@ -6,14 +6,13 @@
 
 #include "bpm_table.h"
 
-#define DOT 128
-#define G 64
-#define F 32
-#define E 16
-#define D 8
-#define C 4
-#define B 2
-#define A 1
+#define B 64
+#define A 32
+#define D 16
+#define E 8
+#define F 4
+#define C 2
+#define G 1
 
 
 uint8_t digits[12] = { 
@@ -72,8 +71,15 @@ ISR(TIMER0_OVF_vect) {
     if (++current_digit == 4) current_digit = 0;
 
     PORTD |= 0b00001111;
-    PORTB = ~(display[current_digit]);
-    PORTC = ~(display[current_digit] >> 2);
+
+    PORTC |= 0b00111111;
+    PORTC &= ~(display[current_digit] & 0b00111111);
+
+    if (display[current_digit] & 0b01000000) {
+        PORTD &= ~(1 << PD4);
+    } else {
+        PORTD |= (1 << PD4);
+    }
 
     PORTD &= ~(1 << current_digit);
 
@@ -130,7 +136,7 @@ int main(void) {
     setup();
 
     DDRC = 0b00111111;
-    DDRD = 0b01001111;
+    DDRD = 0b01011111;
     DDRB = 0b00000011;
 
     PORTD |= (1 << PD7);
@@ -138,10 +144,10 @@ int main(void) {
 
     while(1) {
         if (!(PIND & (1 << PD7)) && current_bpm < MAX_BPM) {
-            current_bpm++;
+            current_bpm--;
         }
         if (!(PINB & (1 << PB2)) && current_bpm > MIN_BPM) {
-            current_bpm--;
+            current_bpm++;
         }
         display_number(current_bpm);
         _delay_ms(100);
