@@ -143,13 +143,13 @@ int main(void) {
     PORTB |= (1 << PB2);
 
     while(1) {
-        if (!(PIND & (1 << PD7)) && current_bpm < MAX_BPM) {
+        if (!(PIND & (1 << PD7)) && current_bpm > MIN_BPM) {
             current_bpm--;
         }
-        if (!(PINB & (1 << PB2)) && current_bpm > MIN_BPM) {
+        if (!(PINB & (1 << PB2)) && current_bpm < MAX_BPM) {
             current_bpm++;
         }
         display_number(current_bpm);
-        _delay_ms(100);
+        _delay_ms(50);
     }
 }
