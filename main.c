@@ -55,7 +55,7 @@ void setup() {
     setup_interrupts();
 }
 
-uint16_t current_bpm = 60;
+uint16_t current_bpm = 61;
 
 bool buzzing = false;
 uint8_t buzzing_counter = 0;
