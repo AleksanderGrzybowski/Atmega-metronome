@@ -39,13 +39,13 @@ void setup_interrupts() {
     TCCR1B &= ~(1 << CS11);
     TCCR1B |= (1 << CS10) | (1 << CS12);
     TIMSK1 |= (1 << TOIE1);
-    TCNT1 = 65530;
+    TCNT1 = 65530; // some high-ish value
     
     // timer 0
     TCCR0A |= (1 << COM0A1) | (1 << COM0A0) | (1 << WGM00);
     TCCR0B |= (1 << CS00);
     TIMSK0 |= (1 << TOIE0);
-    OCR0A = 255;
+    OCR0A = 255; // turned off
 
     sei();
 }
@@ -55,34 +55,36 @@ void setup() {
     setup_interrupts();
 }
 
-uint16_t current_bpm = 61;
+// There was some strange transient that caused a need for this on breadboard,
+// not sure if needed now
+uint16_t current_bpm = 60 + 1;
 
 bool buzzing = false;
 uint8_t buzzing_counter = 0;
+#define SOUND_DURATION 10
+#define SOUND_PWM_VALUE 128
 
 uint8_t current_digit = 0;
 
 
-#define SOUND_DURATION 10
-#define SOUND_PWM_VALUE 128
-
 ISR(TIMER0_OVF_vect) {
-
     if (++current_digit == 4) current_digit = 0;
 
+    // turn off pnp-s to avoid ghosting
     PORTD |= 0b00001111;
 
     PORTC |= 0b00111111;
     PORTC &= ~(display[current_digit] & 0b00111111);
 
-    if (display[current_digit] & 0b01000000) {
+    // One LCD segment is on PORTD (board routing limitations), so 6-th bit is
+    // used for it
+    if (display[current_digit] & 0b01000000) { 
         PORTD &= ~(1 << PD4);
     } else {
         PORTD |= (1 << PD4);
     }
 
     PORTD &= ~(1 << current_digit);
-
 
     if (buzzing) {
         OCR0A = SOUND_PWM_VALUE;
@@ -93,14 +95,14 @@ ISR(TIMER0_OVF_vect) {
             buzzing_counter = 0;
         }
     }
-
 }
 
 
-uint8_t animation_tab[] = {A, G, D, G};
+uint8_t animation_tab[] = {A, G, D, G}; // top, center, bottom, center, ...
 uint8_t animation_index = 0;
 
 ISR(TIMER1_OVF_vect) {
+    // array is indexed from 0, so shifting here
     TCNT1 = 65536 - bpm[current_bpm-20];
     buzzing = 1;
 
@@ -109,7 +111,7 @@ ISR(TIMER1_OVF_vect) {
     display[0] = animation_tab[animation_index];
 }
 
-void display_number(uint16_t number) { // 3-digit
+void display_number(uint16_t number) { // 3-digit, first digit is used for animation
     int tmp[3];
     tmp[0] = number % 10;
     number /= 10;
@@ -139,6 +141,7 @@ int main(void) {
     DDRD = 0b01011111;
     DDRB = 0b00000011;
 
+    // buttons
     PORTD |= (1 << PD7);
     PORTB |= (1 << PB2);
 
